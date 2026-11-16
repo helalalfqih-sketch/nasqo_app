@@ -34,9 +34,7 @@ class WorkspaceProvider extends ChangeNotifier {
   final LocalWorkspaceStore _localStore = LocalWorkspaceStore();
   bool _localReady = false;
 
-  WorkspaceProvider() {
-    _loadDemoSeed();
-  }
+  WorkspaceProvider();
 
   bool get firebaseReady => _firebaseReady;
   bool get localReady => _localReady;
