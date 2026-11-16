@@ -1,8 +1,6 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-import 'firebase_options.dart';
 import 'screens/dashboard_screen.dart';
 import 'state/workspace_provider.dart';
 import 'theme/app_theme.dart';
@@ -10,14 +8,7 @@ import 'theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final provider = WorkspaceProvider();
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    await provider.initFirebase();
-  } catch (_) {
-    // يعمل التطبيق بالبيانات المحلية التجريبية عند عدم توفر تهيئة Firebase على المنصة.
-  }
+  await provider.initLocal();
 
   runApp(
     ChangeNotifierProvider.value(
