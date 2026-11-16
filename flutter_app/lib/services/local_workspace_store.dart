@@ -87,7 +87,11 @@ class LocalWorkspaceStore {
 
   Future<List<LedgerEntryRecord>> readLedger() async =>
       (await _read('ledger'))
-          .map((r) => LedgerEntryRecord.fromMap(r.$1, r.$2))
+          .map((r) => LedgerEntryRecord.fromMap(
+            r.$1,
+            r.$2,
+            createdAtMsOverride: (r.$2['createdAtMs'] as num?)?.toInt(),
+          ))
           .toList();
 
   Future<List<WarehouseRecord>> readWarehouses() async =>
