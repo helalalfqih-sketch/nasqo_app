@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/nasqo_models.dart';
 import '../services/firebase_service.dart';
+import '../services/local_workspace_store.dart';
 import '../theme/app_theme.dart';
 
 class WorkspaceProvider extends ChangeNotifier {
@@ -30,12 +31,13 @@ class WorkspaceProvider extends ChangeNotifier {
   List<WarehouseRecord> _warehouses = [];
   List<InventoryItemRecord> _inventory = [];
   final List<StreamSubscription<dynamic>> _subs = [];
+  final LocalWorkspaceStore _localStore = LocalWorkspaceStore();
+  bool _localReady = false;
 
-  WorkspaceProvider() {
-    _loadDemoSeed();
-  }
+  WorkspaceProvider();
 
   bool get firebaseReady => _firebaseReady;
+  bool get localReady => _localReady;
   bool get cloudConnected => _cloudConnected;
   User? get user => _user;
   ThemeMode get themeMode => _themeMode;
@@ -46,6 +48,29 @@ class WorkspaceProvider extends ChangeNotifier {
   List<WarehouseRecord> get warehouses => List.unmodifiable(_warehouses);
   List<InventoryItemRecord> get inventory => List.unmodifiable(_inventory);
   String get activeUid => _user?.uid ?? _demoUid;
+
+  /// Loads persisted device data; a fresh installation starts with no
+  /// financial entries. Demo data must never appear as real transactions.
+  Future<void> initLocal() async {
+    await _localStore.open();
+    final savedWorkspace = await _localStore.readSettings();
+    if (savedWorkspace != null) {
+      _workspace = savedWorkspace;
+    } else {
+      await _localStore.saveSettings(_workspace);
+    }
+    _accounts = await _localStore.readAccounts()
+      ..sort((a, b) {
+        final result = a.sortOrder.compareTo(b.sortOrder);
+        return result != 0 ? result : a.codeNumber.compareTo(b.codeNumber);
+      });
+    _ledger = await _localStore.readLedger();
+    _warehouses = await _localStore.readWarehouses();
+    _inventory = await _localStore.readInventory();
+    _cloudConnected = false;
+    _localReady = true;
+    notifyListeners();
+  }
 
   void _loadDemoSeed() {
     _accounts = FirebaseService.starterAccounts(_demoUid);
@@ -176,14 +201,13 @@ class WorkspaceProvider extends ChangeNotifier {
   }
 
   Future<void> updateWorkspaceSettings(WorkspaceSettings next) async {
+    await _localStore.saveSettings(next);
     _workspace = next;
     notifyListeners();
-    if (_cloudConnected && _user != null) {
-      await FirebaseService.saveWorkspaceSettings(_user!.uid, next);
-    }
   }
 
   Future<AccountRecord> addOrUpdateAccount(AccountRecord account) async {
+    await _localStore.saveAccount(account);
     final idx = _accounts.indexWhere((a) => a.id == account.id);
     if (idx >= 0) {
       _accounts[idx] = account;
@@ -191,38 +215,27 @@ class WorkspaceProvider extends ChangeNotifier {
       _accounts = [..._accounts, account];
     }
     notifyListeners();
-    if (_cloudConnected && _user != null) {
-      await FirebaseService.saveAccount(_user!.uid, account);
-    }
     return account;
   }
 
   Future<LedgerEntryRecord> addLedgerEntry(LedgerEntryRecord entry) async {
+    await _localStore.saveLedger(entry);
     _ledger = [entry, ..._ledger];
     notifyListeners();
-    if (_cloudConnected && _user != null) {
-      await FirebaseService.saveLedgerEntry(_user!.uid, entry);
-    }
     return entry;
   }
 
   Future<void> softDeleteLedgerEntry(String entryId, bool deleted) async {
-    _ledger = _ledger
-        .map((e) => e.id == entryId ? e.copyWith(deleted: deleted) : e)
-        .toList();
+    final target = _ledger.firstWhere((e) => e.id == entryId).copyWith(deleted: deleted);
+    await _localStore.saveLedger(target);
+    _ledger = _ledger.map((e) => e.id == entryId ? target : e).toList();
     notifyListeners();
-    if (_cloudConnected && _user != null) {
-      final target = _ledger.firstWhere((e) => e.id == entryId);
-      await FirebaseService.saveLedgerEntry(_user!.uid, target);
-    }
   }
 
   Future<void> addWarehouse(WarehouseRecord warehouse) async {
+    await _localStore.saveWarehouse(warehouse);
     _warehouses = [..._warehouses, warehouse];
     notifyListeners();
-    if (_cloudConnected && _user != null) {
-      await FirebaseService.saveWarehouse(_user!.uid, warehouse);
-    }
   }
 
   int nextEntryNumber() {
@@ -244,6 +257,7 @@ class WorkspaceProvider extends ChangeNotifier {
     for (final s in _subs) {
       s.cancel();
     }
+    _localStore.close();
     super.dispose();
   }
 }
