@@ -1,0 +1,324 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidCurrency(val) {
+      return val is string && val in ['ريال', 'دولار', 'يورو', 'عملة 2'];
+    }
+
+    function isWorkspaceOwner(workspaceId) {
+      return isVerified()
+        && request.auth.uid == workspaceId
+        && exists(/databases/$(database)/documents/workspaces/$(workspaceId))
+        && get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId == request.auth.uid;
+    }
+
+    function isValidWorkspace(data) {
+      return data.keys().hasAll([
+          'ownerId', 'companyName', 'defaultCurrency', 'whatsappProvider',
+          'whatsappInstantEnabled', 'whatsappPhone', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'companyName', 'defaultCurrency', 'whatsappProvider',
+          'whatsappInstantEnabled', 'whatsappPhone', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId == request.auth.uid && data.ownerId.size() <= 128
+        && data.companyName is string && data.companyName.size() >= 1 && data.companyName.size() <= 100
+        && isValidCurrency(data.defaultCurrency)
+        && data.whatsappProvider is string && data.whatsappProvider in ['nasqo', 'external']
+        && data.whatsappInstantEnabled is bool
+        && data.whatsappPhone is string && data.whatsappPhone.size() <= 32
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAccount(data) {
+      return data.keys().hasAll([
+          'ownerId', 'name', 'category', 'phone', 'creditLimit', 'currency',
+          'isCashAccount', 'accountImage', 'sortOrder', 'settlement',
+          'documentNumberRequired', 'messageMethod', 'sendMode', 'note',
+          'openingBalance', 'openingDirection', 'codeNumber', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'name', 'category', 'phone', 'creditLimit', 'currency',
+          'isCashAccount', 'accountImage', 'sortOrder', 'settlement',
+          'documentNumberRequired', 'messageMethod', 'sendMode', 'note',
+          'openingBalance', 'openingDirection', 'codeNumber', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId == request.auth.uid && data.ownerId.size() <= 128
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 100
+        && data.category is string && data.category in ['purchases', 'sales', 'clients', 'employees', 'transfers', 'shop']
+        && data.phone is string && data.phone.size() <= 32
+        && data.creditLimit is number && data.creditLimit >= 0
+        && isValidCurrency(data.currency)
+        && data.isCashAccount is bool
+        && data.accountImage is string && data.accountImage in ['1', '2', '3']
+        && data.sortOrder is number
+        && data.settlement is bool
+        && data.documentNumberRequired is bool
+        && data.messageMethod is string && data.messageMethod in ['sms', 'whatsapp']
+        && data.sendMode is string && data.sendMode in ['auto', 'confirm', 'never']
+        && data.note is string && data.note.size() <= 300
+        && data.openingBalance is number && data.openingBalance >= 0
+        && data.openingDirection is string && data.openingDirection in ['debit', 'credit']
+        && data.codeNumber is number
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidLedgerEntry(data) {
+      return data.keys().hasAll([
+          'ownerId', 'accountId', 'accountName', 'counterpartAccountId', 'counterpartAccountName',
+          'kind', 'typeLabel', 'payment', 'direction', 'amount', 'currency', 'exchangeRate',
+          'details', 'documentNumber', 'warehouseId', 'warehouseName', 'invoiceContent',
+          'entryNumber', 'deleted', 'entryDate', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'accountId', 'accountName', 'counterpartAccountId', 'counterpartAccountName',
+          'kind', 'typeLabel', 'payment', 'direction', 'amount', 'currency', 'exchangeRate',
+          'details', 'documentNumber', 'warehouseId', 'warehouseName', 'invoiceContent',
+          'entryNumber', 'deleted', 'entryDate', 'dueDate', 'expenseCategory', 'deliveryDays',
+          'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId == request.auth.uid && data.ownerId.size() <= 128
+        && data.accountId is string && data.accountId.size() >= 1 && data.accountId.size() <= 128
+        && data.accountName is string && data.accountName.size() >= 1 && data.accountName.size() <= 100
+        && data.counterpartAccountId is string && data.counterpartAccountId.size() <= 128
+        && data.counterpartAccountName is string && data.counterpartAccountName.size() <= 100
+        && data.kind is string && data.kind in ['voucher', 'invoice', 'return', 'quote', 'order', 'transfer', 'currency', 'simple-entry', 'opening']
+        && data.typeLabel is string && data.typeLabel.size() >= 1 && data.typeLabel.size() <= 60
+        && data.payment is string && data.payment in ['cash', 'credit', 'balance']
+        && data.direction is string && data.direction in ['debit', 'credit']
+        && data.amount is number && data.amount >= 0
+        && isValidCurrency(data.currency)
+        && data.exchangeRate is number && data.exchangeRate > 0
+        && data.details is string && data.details.size() <= 600
+        && data.documentNumber is string && data.documentNumber.size() <= 64
+        && data.warehouseId is string && data.warehouseId.size() <= 128
+        && data.warehouseName is string && data.warehouseName.size() <= 100
+        && data.invoiceContent is string && data.invoiceContent in ['items', 'free', 'none']
+        && data.entryNumber is number
+        && data.deleted is bool
+        && data.entryDate is string && data.entryDate.size() >= 1 && data.entryDate.size() <= 40
+        && (!('dueDate' in data) || (data.dueDate is string && data.dueDate.size() <= 40))
+        && (!('expenseCategory' in data) || (data.expenseCategory is string && data.expenseCategory.size() <= 60))
+        && (!('deliveryDays' in data) || (data.deliveryDays is number && data.deliveryDays >= 0 && data.deliveryDays <= 365))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidWarehouse(data) {
+      return data.keys().hasAll([
+          'ownerId', 'name', 'details', 'isDefault', 'codeNumber', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'name', 'details', 'isDefault', 'codeNumber', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId == request.auth.uid && data.ownerId.size() <= 128
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 100
+        && data.details is string && data.details.size() <= 300
+        && data.isDefault is bool
+        && data.codeNumber is number
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidInventoryItem(data) {
+      return data.keys().hasAll([
+          'ownerId', 'name', 'unit', 'quantity', 'avgCost', 'warehouseId', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'name', 'unit', 'quantity', 'avgCost', 'minThreshold', 'sku', 'warehouseId', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId == request.auth.uid && data.ownerId.size() <= 128
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && data.unit is string && data.unit.size() >= 1 && data.unit.size() <= 32
+        && data.quantity is number && data.quantity >= 0
+        && data.avgCost is number && data.avgCost >= 0
+        && (!('minThreshold' in data) || (data.minThreshold is number && data.minThreshold >= 0))
+        && (!('sku' in data) || (data.sku is string && data.sku.size() <= 64))
+        && data.warehouseId is string && data.warehouseId.size() >= 1 && data.warehouseId.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCloudBackup(data) {
+      return data.keys().hasAll([
+          'ownerId', 'name', 'accountsCount', 'ledgerCount',
+          'warehousesCount', 'inventoryCount', 'exportedAtIso',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'name', 'accountsCount', 'ledgerCount',
+          'warehousesCount', 'inventoryCount', 'exportedAtIso',
+          'createdAt', 'updatedAt'
+        ])
+        && data.ownerId is string && data.ownerId == request.auth.uid && data.ownerId.size() <= 128
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && data.accountsCount is number && data.accountsCount >= 0
+        && data.ledgerCount is number && data.ledgerCount >= 0
+        && data.warehousesCount is number && data.warehousesCount >= 0
+        && data.inventoryCount is number && data.inventoryCount >= 0
+        && data.exportedAtIso is string && data.exportedAtIso.size() >= 1 && data.exportedAtIso.size() <= 40
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /workspaces/{workspaceId} {
+      allow get: if isVerified() && isValidId(workspaceId) && request.auth.uid == workspaceId;
+      allow list: if isVerified() && request.auth.uid == workspaceId && existing().ownerId == request.auth.uid;
+      allow create: if isVerified()
+        && isValidId(workspaceId)
+        && request.auth.uid == workspaceId
+        && isValidWorkspace(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerified()
+        && isValidId(workspaceId)
+        && request.auth.uid == workspaceId
+        && existing().ownerId == request.auth.uid
+        && isValidWorkspace(incoming())
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'companyName', 'defaultCurrency', 'whatsappProvider',
+          'whatsappInstantEnabled', 'whatsappPhone', 'updatedAt'
+        ]);
+      allow delete: if false;
+
+      match /accounts/{accountId} {
+        allow get: if isValidId(workspaceId) && isValidId(accountId) && isWorkspaceOwner(workspaceId);
+        allow list: if isVerified() && request.auth.uid == workspaceId && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(workspaceId)
+          && isValidId(accountId)
+          && isValidAccount(incoming())
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && isWorkspaceOwner(workspaceId);
+        allow update: if isValidId(workspaceId)
+          && isValidId(accountId)
+          && isValidAccount(incoming())
+          && isWorkspaceOwner(workspaceId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'category', 'phone', 'creditLimit', 'currency', 'isCashAccount',
+            'accountImage', 'sortOrder', 'settlement', 'documentNumberRequired',
+            'messageMethod', 'sendMode', 'note', 'openingBalance', 'openingDirection',
+            'updatedAt'
+          ]);
+        allow delete: if isValidId(workspaceId) && isValidId(accountId) && isWorkspaceOwner(workspaceId);
+      }
+
+      match /ledger/{entryId} {
+        allow get: if isValidId(workspaceId) && isValidId(entryId) && isWorkspaceOwner(workspaceId);
+        allow list: if isVerified() && request.auth.uid == workspaceId && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(workspaceId)
+          && isValidId(entryId)
+          && isValidLedgerEntry(incoming())
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && isWorkspaceOwner(workspaceId);
+        allow update: if isValidId(workspaceId)
+          && isValidId(entryId)
+          && isValidLedgerEntry(incoming())
+          && isWorkspaceOwner(workspaceId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'accountId', 'accountName', 'counterpartAccountId', 'counterpartAccountName',
+              'kind', 'typeLabel', 'payment', 'direction', 'amount', 'currency',
+              'exchangeRate', 'details', 'documentNumber', 'warehouseId', 'warehouseName',
+              'invoiceContent', 'entryDate', 'dueDate', 'expenseCategory', 'deliveryDays', 'updatedAt'
+            ]) ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['deleted', 'updatedAt'])
+          );
+        allow delete: if isValidId(workspaceId) && isValidId(entryId) && isWorkspaceOwner(workspaceId);
+      }
+
+      match /warehouses/{warehouseId} {
+        allow get: if isValidId(workspaceId) && isValidId(warehouseId) && isWorkspaceOwner(workspaceId);
+        allow list: if isVerified() && request.auth.uid == workspaceId && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(workspaceId)
+          && isValidId(warehouseId)
+          && isValidWarehouse(incoming())
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && isWorkspaceOwner(workspaceId);
+        allow update: if isValidId(workspaceId)
+          && isValidId(warehouseId)
+          && isValidWarehouse(incoming())
+          && isWorkspaceOwner(workspaceId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'details', 'isDefault', 'updatedAt']);
+        allow delete: if isValidId(workspaceId) && isValidId(warehouseId) && isWorkspaceOwner(workspaceId);
+      }
+
+      match /inventory/{itemId} {
+        allow get: if isValidId(workspaceId) && isValidId(itemId) && isWorkspaceOwner(workspaceId);
+        allow list: if isVerified() && request.auth.uid == workspaceId && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(workspaceId)
+          && isValidId(itemId)
+          && isValidInventoryItem(incoming())
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && isWorkspaceOwner(workspaceId);
+        allow update: if isValidId(workspaceId)
+          && isValidId(itemId)
+          && isValidInventoryItem(incoming())
+          && isWorkspaceOwner(workspaceId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'unit', 'quantity', 'avgCost', 'minThreshold', 'sku', 'warehouseId', 'updatedAt'
+          ]);
+        allow delete: if isValidId(workspaceId) && isValidId(itemId) && isWorkspaceOwner(workspaceId);
+      }
+
+      match /backups/{backupId} {
+        allow get: if isValidId(workspaceId) && isValidId(backupId) && isWorkspaceOwner(workspaceId);
+        allow list: if isVerified() && request.auth.uid == workspaceId && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(workspaceId)
+          && isValidId(backupId)
+          && isValidCloudBackup(incoming())
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && isWorkspaceOwner(workspaceId);
+        allow update: if false;
+        allow delete: if isValidId(workspaceId) && isValidId(backupId) && isWorkspaceOwner(workspaceId);
+      }
+    }
+  }
+}

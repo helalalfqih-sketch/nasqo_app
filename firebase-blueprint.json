@@ -1,0 +1,486 @@
+{
+  "entities": {
+    "Workspace": {
+      "title": "Workspace",
+      "description": "Business workspace configuration and messaging preferences owned by an authenticated user.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Firebase Auth UID of the workspace owner."
+        },
+        "companyName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Display name of the business or merchant."
+        },
+        "defaultCurrency": {
+          "type": "string",
+          "enum": ["ريال", "دولار", "يورو", "عملة 2"],
+          "description": "Default accounting currency."
+        },
+        "whatsappProvider": {
+          "type": "string",
+          "enum": ["nasqo", "external"],
+          "description": "Selected WhatsApp notification provider."
+        },
+        "whatsappInstantEnabled": {
+          "type": "boolean",
+          "description": "Whether instant WhatsApp notifications are enabled."
+        },
+        "whatsappPhone": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "Business phone number configured for notifications."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-updated timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "companyName",
+        "defaultCurrency",
+        "whatsappProvider",
+        "whatsappInstantEnabled",
+        "whatsappPhone",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Account": {
+      "title": "Account",
+      "description": "Supplier, client, employee, cash, or shop ledger account.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "category": {
+          "type": "string",
+          "enum": ["purchases", "sales", "clients", "employees", "transfers", "shop"]
+        },
+        "phone": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "creditLimit": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string",
+          "enum": ["ريال", "دولار", "يورو", "عملة 2"]
+        },
+        "isCashAccount": {
+          "type": "boolean"
+        },
+        "accountImage": {
+          "type": "string",
+          "enum": ["1", "2", "3"]
+        },
+        "sortOrder": {
+          "type": "number"
+        },
+        "settlement": {
+          "type": "boolean"
+        },
+        "documentNumberRequired": {
+          "type": "boolean"
+        },
+        "messageMethod": {
+          "type": "string",
+          "enum": ["sms", "whatsapp"]
+        },
+        "sendMode": {
+          "type": "string",
+          "enum": ["auto", "confirm", "never"]
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "openingBalance": {
+          "type": "number"
+        },
+        "openingDirection": {
+          "type": "string",
+          "enum": ["debit", "credit"]
+        },
+        "codeNumber": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "name",
+        "category",
+        "phone",
+        "creditLimit",
+        "currency",
+        "isCashAccount",
+        "accountImage",
+        "sortOrder",
+        "settlement",
+        "documentNumberRequired",
+        "messageMethod",
+        "sendMode",
+        "note",
+        "openingBalance",
+        "openingDirection",
+        "codeNumber",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "LedgerEntry": {
+      "title": "LedgerEntry",
+      "description": "Financial voucher, invoice, return, quote, order, currency exchange, or simple entry.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "accountId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "accountName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "counterpartAccountId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "counterpartAccountName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["voucher", "invoice", "return", "quote", "order", "transfer", "currency", "simple-entry", "opening"]
+        },
+        "typeLabel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "payment": {
+          "type": "string",
+          "enum": ["cash", "credit", "balance"]
+        },
+        "direction": {
+          "type": "string",
+          "enum": ["debit", "credit"]
+        },
+        "amount": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string",
+          "enum": ["ريال", "دولار", "يورو", "عملة 2"]
+        },
+        "exchangeRate": {
+          "type": "number"
+        },
+        "details": {
+          "type": "string",
+          "maxLength": 600
+        },
+        "documentNumber": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "warehouseId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "warehouseName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "invoiceContent": {
+          "type": "string",
+          "enum": ["items", "free", "none"]
+        },
+        "entryNumber": {
+          "type": "number"
+        },
+        "deleted": {
+          "type": "boolean"
+        },
+        "entryDate": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "dueDate": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "expenseCategory": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "deliveryDays": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "accountId",
+        "accountName",
+        "counterpartAccountId",
+        "counterpartAccountName",
+        "kind",
+        "typeLabel",
+        "payment",
+        "direction",
+        "amount",
+        "currency",
+        "exchangeRate",
+        "details",
+        "documentNumber",
+        "warehouseId",
+        "warehouseName",
+        "invoiceContent",
+        "entryNumber",
+        "deleted",
+        "entryDate",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Warehouse": {
+      "title": "Warehouse",
+      "description": "Inventory warehouse managed inside the workspace.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "details": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "isDefault": {
+          "type": "boolean"
+        },
+        "codeNumber": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "name",
+        "details",
+        "isDefault",
+        "codeNumber",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "InventoryItem": {
+      "title": "InventoryItem",
+      "description": "Tracked product/SKU item associated with a warehouse.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "quantity": {
+          "type": "number"
+        },
+        "avgCost": {
+          "type": "number"
+        },
+        "minThreshold": {
+          "type": "number"
+        },
+        "sku": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "warehouseId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "name",
+        "unit",
+        "quantity",
+        "avgCost",
+        "warehouseId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CloudBackup": {
+      "title": "CloudBackup",
+      "description": "Named cloud backup snapshot metadata saved by the workspace owner.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "accountsCount": {
+          "type": "number"
+        },
+        "ledgerCount": {
+          "type": "number"
+        },
+        "warehousesCount": {
+          "type": "number"
+        },
+        "inventoryCount": {
+          "type": "number"
+        },
+        "exportedAtIso": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "name",
+        "accountsCount",
+        "ledgerCount",
+        "warehousesCount",
+        "inventoryCount",
+        "exportedAtIso",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/workspaces/{workspaceId}": {
+      "schema": {
+        "$ref": "#/entities/Workspace"
+      },
+      "description": "Workspace root document owned by the authenticated user (workspaceId == ownerId)."
+    },
+    "/workspaces/{workspaceId}/accounts/{accountId}": {
+      "schema": {
+        "$ref": "#/entities/Account"
+      },
+      "description": "Accounts subcollection belonging to the workspace."
+    },
+    "/workspaces/{workspaceId}/ledger/{entryId}": {
+      "schema": {
+        "$ref": "#/entities/LedgerEntry"
+      },
+      "description": "Financial ledger entries belonging to the workspace."
+    },
+    "/workspaces/{workspaceId}/warehouses/{warehouseId}": {
+      "schema": {
+        "$ref": "#/entities/Warehouse"
+      },
+      "description": "Warehouses subcollection belonging to the workspace."
+    },
+    "/workspaces/{workspaceId}/inventory/{itemId}": {
+      "schema": {
+        "$ref": "#/entities/InventoryItem"
+      },
+      "description": "Inventory items subcollection belonging to the workspace."
+    },
+    "/workspaces/{workspaceId}/backups/{backupId}": {
+      "schema": {
+        "$ref": "#/entities/CloudBackup"
+      },
+      "description": "Named cloud backup metadata records belonging to the workspace."
+    }
+  }
+}
+

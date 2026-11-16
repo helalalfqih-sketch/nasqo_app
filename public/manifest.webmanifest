@@ -1,0 +1,21 @@
+{
+  "id": "/",
+  "name": "نسقو برو — نظام إدارة الأعمال والحسابات",
+  "short_name": "نسقو برو",
+  "description": "نظام إدارة الحسابات والمشتريات والمبيعات والمخازن والفواتير السحابي.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "dir": "rtl",
+  "lang": "ar",
+  "theme_color": "#075da8",
+  "background_color": "#fafafa",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "نسقو برو",
+  "description": "نظام سحابي متكامل لإدارة الحسابات والمشتريات والمبيعات والمخازن والفواتير باللغة العربية.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
